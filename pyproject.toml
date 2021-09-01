@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "Trace-8"
+version = "0.1.0"
+description = "A CHIP-8 emulator/interpreter written in Python3."
+authors = ["NovaEmiya <importz750@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pygame = "^2.0.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+flake8 = "^3.9.2"
+black = "^21.7b0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
