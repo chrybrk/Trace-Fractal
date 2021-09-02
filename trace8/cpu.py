@@ -75,7 +75,6 @@ class CPU:
         """
         loads ROM in memory.
         """
-        logging.debug("hi")
         with open(path, "rb") as rom:
             for i, bnry in enumerate(rom.read()):
                 self._memory[
