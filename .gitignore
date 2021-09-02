@@ -3,4 +3,5 @@ dist/
 .idea/
 test.py
 site
+pong.rom
 __pycache__/
