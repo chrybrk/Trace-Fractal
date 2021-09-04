@@ -28,11 +28,10 @@ class CPU:
 
     def __init__(self, *, log: bool = True) -> None:
 
-        self.keymap = [0] * 16  # 16 availabel keys
+        self.keymap = [0] * 16  # 16 available keys
 
         self.arm_registers()
         self.arm_memory_units()
-        self.arm_keyboard()
         self.load_fonts()
 
         self.opcode: int = 0
@@ -239,7 +238,10 @@ class CPU:
         """
         self.fetch_op()
         exop = self.opcode & 0xF000
+
         self._opmap[exop]()
+        self.arm_keyboard()
+
         self.pc += 2
         if self._logflag:
             self.debugworks()
