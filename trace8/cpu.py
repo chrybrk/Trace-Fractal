@@ -44,30 +44,37 @@ class CPU:
     @property
     def _vx(self):
         """
-        x-pos register.
+        lower 4 bits of the high byte of the instruction.
         """
         return (self.opcode & 0x0F00) >> 8
 
     @property
     def _vy(self):
         """
-        y-pos register.
+        upper 4 bits of the low byte of the instruction.
         """
         return (self.opcode & 0x00F0) >> 4
 
     @property
     def _kk(self):
         """
-        wtf is this for.
+        lowest 8 bit of instructions.
         """
         return self.opcode & 0x00FF
 
     @property
     def _nn(self):
         """
-        probably max height.
+        lowest 4 bits of instructions.
         """
         return self.opcode & 0x000F
+
+    @property
+    def _nnn(self):
+        """
+        lowest 12 bits of the instructions.
+        """
+        return self._opcode.value & 0x0FFF
 
     def arm_memory_units(self) -> None:
         """
@@ -207,6 +214,10 @@ class CPU:
         self.stack.append(self.pc)
         self.pc = self.opcode & 0x0FFF
 
+    def op_CALL_F(self):
+        exop = self.opcode & 0xf0ff
+        self._opmap[exop]()
+
     @property
     def _opmap(self):
         """
@@ -218,6 +229,7 @@ class CPU:
             0xA000: self.op_LD_I_ADDR,
             0xD000: self.op_DRW_Vx_Vy_nibble,
             0x2000: self.op_CALL_ADDR,
+            0xF000: self.op_CALL_F
         }
         return opmap
 
