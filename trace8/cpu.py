@@ -73,7 +73,7 @@ class CPU:
         """
         lowest 12 bits of the instructions.
         """
-        return self._opcode.value & 0x0FFF
+        return self.opcode & 0x0FFF
 
     def arm_memory_units(self) -> None:
         """
@@ -174,11 +174,11 @@ class CPU:
         """
         0xa000 - Loads index register.
         """
-        self.I = self.opcode & 0x0FFF  # noqa E741
+        self.I = self._nnn  # noqa E741
 
     def op_DRW_Vx_Vy_nibble(self):
         """
-        0xd000 - Draws Vx and Vn on screen.
+        0xd000 - Draws Vx and Vy on screen.
         """
         self.V[0xF] = 0  # Resetting register
 
@@ -199,23 +199,55 @@ class CPU:
 
                         if self._display_buffer[(x + pxo + ((y + row) * 64))] == 1:
                             self.V[0xF] = 1
-
+                        else:
+                            self.V[0xf] = 0
                         self._display_buffer[x + pxo + ((y + row) * 64)] ^= 1
             row += 1
-
-        self.draw_flag = True
-        self.pc += 2
+            self.draw_flag = True
 
     def op_CALL_ADDR(self):
         """
-        Call subroutine at nnn.
+        0x2000 - Call subroutine at nnn.
         """
         self.stack.append(self.pc)
-        self.pc = self.opcode & 0x0FFF
+        self.pc = self._nnn
 
     def op_CALL_F(self):
+        """
+        0xF000 - ???
+        """
         exop = self.opcode & 0xf0ff
         self._opmap[exop]()
+
+    def op_LD_B_Vx(self):
+        """
+        0xF033 - Store BCD representation of Vx in memory locations I, I+1, and I+2.
+        """
+        vx = self.V[self._vx]
+        idx = self.I
+
+        self._memory[idx] = vx // 100
+        self._memory[idx + 1] = vx % 100 // 10
+        self._memory[idx + 1] = vx % 10
+
+    def op_LD_Vx_I(self):
+        """
+        0xF065 - Fills registers V0 through Vx from memory starting at location I.
+        """
+        for i in range(self._vx):
+            self.V[i] = self._memory[self.I + i]
+
+    def op_LD_F_Vx(self):
+        """
+        0xf029 - Set I = location of sprite for digit Vx.
+        """
+        self.I = (5*(self.V[self._vx])) & 0xfff  # noqa E741
+
+    def op_ADD_Vx_byte(self):
+        """
+        0x7000 - Set Vx = Vx + kk.
+        """
+        self.V[self._vx] += self._kk
 
     @property
     def _opmap(self):
@@ -228,7 +260,11 @@ class CPU:
             0xA000: self.op_LD_I_ADDR,
             0xD000: self.op_DRW_Vx_Vy_nibble,
             0x2000: self.op_CALL_ADDR,
-            0xF000: self.op_CALL_F
+            0xF000: self.op_CALL_F,
+            0xF033: self.op_LD_B_Vx,
+            0xF065: self.op_LD_Vx_I,
+            0xF029: self.op_LD_F_Vx,
+            0x7000: self.op_ADD_Vx_byte
         }
         return opmap
 
@@ -236,12 +272,11 @@ class CPU:
         """
         The main execution cycle of cpu.
         """
+        self.arm_keyboard()
         self.fetch_op()
         exop = self.opcode & 0xF000
 
         self._opmap[exop]()
-        self.arm_keyboard()
-
         self.pc += 2
         if self._logflag:
             self.debugworks()
