@@ -1,3 +1,4 @@
+import random
 from collections import deque
 
 import pygame
@@ -151,13 +152,6 @@ class CPU:
         lgr = self._log.create_logger()
         lgr.debug(self._log.generate_log(self))
 
-    def fetch_op(self):
-        """
-        Fetches the current opcode.
-        """
-        opcode = (self._memory[self.pc] << 8) | (self._memory[self.pc + 1])
-        self.opcode = opcode
-
     def op_CLS(self):
         """
         0x00E0 - Cleans the screen
@@ -180,30 +174,7 @@ class CPU:
         """
         0xd000 - Draws Vx and Vy on screen.
         """
-        self.V[0xF] = 0  # Resetting register
-
-        # x and y coordinates for pixel
-        x = self.V[self._vx] & 0xFF
-        y = self.V[self._vy] & 0xFF
-
-        height = self._nn
-        row = 0
-
-        while height > row:
-            pixel = self._memory[self.I + row]
-
-            for pxo in range(8):
-
-                if 8 > pxo:
-                    if (pixel & (0x80 >> pxo)) != 0:
-
-                        if self._display_buffer[(x + pxo + ((y + row) * 64))] == 1:
-                            self.V[0xF] = 1
-                        else:
-                            self.V[0xf] = 0
-                        self._display_buffer[x + pxo + ((y + row) * 64)] ^= 1
-            row += 1
-            self.draw_flag = True
+        ...
 
     def op_CALL_ADDR(self):
         """
@@ -214,9 +185,9 @@ class CPU:
 
     def op_CALL_F(self):
         """
-        0xF000 - ???
+        0xF000 - switches to Fx opcodes.
         """
-        exop = self.opcode & 0xf0ff
+        exop = self.opcode & 0xF0FF
         self._opmap[exop]()
 
     def op_LD_B_Vx(self):
@@ -227,8 +198,8 @@ class CPU:
         idx = self.I
 
         self._memory[idx] = vx // 100
-        self._memory[idx + 1] = vx % 100 // 10
-        self._memory[idx + 1] = vx % 10
+        self._memory[idx + 1] = (vx % 100) // 10
+        self._memory[idx + 2] = vx % 10
 
     def op_LD_Vx_I(self):
         """
@@ -236,18 +207,133 @@ class CPU:
         """
         for i in range(self._vx):
             self.V[i] = self._memory[self.I + i]
+        self.I += (self._vx) + 1  # noqa E741
 
     def op_LD_F_Vx(self):
         """
         0xf029 - Set I = location of sprite for digit Vx.
         """
-        self.I = (5*(self.V[self._vx])) & 0xfff  # noqa E741
+        self.I = (5 * (self.V[self._vx])) & 0xFFF  # noqa E741
 
     def op_ADD_Vx_byte(self):
         """
         0x7000 - Set Vx = Vx + kk.
         """
-        self.V[self._vx] += self._kk
+        self.V[self._vx] += self.opcode & 0xFF
+
+    def op_SYS_addr(self):
+        """
+        0x0000 - Jump to a machine code routine at nnn.
+        """
+        extracted_op = self.opcode & 0xF0FF
+        self._opmap[extracted_op]()
+
+    def op_RET(self):
+        """
+        0x000EE - Return from a subroutine.
+        """
+        self.pc = self.stack.pop()
+
+    def op_LD_DT_Vx(self):
+        """
+        0xFO15 - Set delay timer = Vx.
+        """
+        self.dt = self.V[self._vx]
+
+    def op_LD_Vx_DT(self):
+        """
+        0xF007 - Set Vx = delay timer value.
+        """
+        self.V[self._vx] = self.dt
+
+    def op_SE_Vx_byte(self):
+        """
+        0x3000 - Skip next instruction if Vx = kk.
+        """
+        if self.V[self._vx] == self._kk:
+            self.pc += 2
+
+    def op_JP_addr(self):
+        """
+        0x1000 - Jump to location nnn.
+        """
+        self.pc = self._nnn
+
+    def op_RND_Vx_byte(self):
+        """
+        0xC000 - Set Vx = random byte AND kk.
+        """
+        rnum = random.randrange(0, 256) & self._kk
+        self.V[self._vx] = rnum
+
+    def op_CALL_E(self):
+        """
+        0xE000 - Switches to Ex opcodes.
+        """
+        exop = self.opcode & 0xF00F
+        self._opmap[exop]()
+
+    def op_SKNP_Vx(self):
+        """
+        0xE001 - Skip next instruction if key with the value of Vx is not pressed.
+        """
+        if not self.keymap[self.V[self._vx]]:
+            self.pc += 2
+
+    def op_CALL_8(self):
+        """
+        0x8000 - switches to 8x opcodes.
+        """
+        exop = (self.opcode & 0xF00F) + 0xFF0
+
+        self._opmap[exop]()
+
+    def op_AND_Vx_Vy(self):
+        """
+        0x8ff2 - Set Vx = Vx AND Vy.
+        """
+        self.V[self._vx] &= self.V[self._vy]
+        self.V[self._vx] &= 0xFF
+
+    def op_ADD_Vx_Vy(self):
+        """
+        0x8ff4 - Set Vx = Vx + Vy, set VF = carry.
+        """
+        op = self.V[self._vx] + self.V[self._vy]
+        self.V[0xF] = 1 if op > 0xFF else 0
+        op &= 0xFF
+        self.V[self._vx] = op
+
+    def op_SNE_Vx_byte(self):
+        """
+        0x4000 - Skip next instruction if Vx != kk.
+        """
+        if self.V[self._vx] != self._kk:
+            self.pc += 2
+
+    def op_LD_Vx_Vy(self):
+        """
+        0x8ff0 - Set Vx = Vy.
+        """
+        self.V[self._vx] = self.V[self._vy]
+        self.V[self._vx] &= 0xFF
+
+    def op_SUB_Vx_Vy(self):
+        """
+        0x8ff5 - Set Vx = Vx - Vy, set VF = NOT borrow.
+        """
+        if self.V[self._vx] > self.V[self._vy]:
+            self.V[0xF] = 1
+        else:
+            self.V[0xF] = 0
+        self.V[self._vx] -= self.V[self._vy]
+        self.V[self._vx] &= 0xFF
+
+    def op_LD_ST_Vx(self):
+        """
+        0xf018 - Set sound timer = Vx.
+        """
+        self.st = self.V[self._vx]
 
     @property
     def _opmap(self):
@@ -264,9 +350,32 @@ class CPU:
             0xF033: self.op_LD_B_Vx,
             0xF065: self.op_LD_Vx_I,
             0xF029: self.op_LD_F_Vx,
-            0x7000: self.op_ADD_Vx_byte
+            0x7000: self.op_ADD_Vx_byte,
+            0x0000: self.op_SYS_addr,
+            0x00EE: self.op_RET,
+            0xF015: self.op_LD_DT_Vx,
+            0xF007: self.op_LD_Vx_DT,
+            0x3000: self.op_SE_Vx_byte,
+            0x1000: self.op_JP_addr,
+            0xC000: self.op_RND_Vx_byte,
+            0xE000: self.op_CALL_E,
+            0xE001: self.op_SKNP_Vx,
+            0x8000: self.op_CALL_8,
+            0x8FF2: self.op_AND_Vx_Vy,
+            0x8FF4: self.op_ADD_Vx_Vy,
+            0x4000: self.op_SNE_Vx_byte,
+            0x8FF0: self.op_LD_Vx_Vy,
+            0x8FF5: self.op_SUB_Vx_Vy,
+            0xF018: self.op_LD_ST_Vx,
         }
         return opmap
+
+    def fetch_op(self):
+        """
+        Fetches the current opcode.
+        """
+        opcode = (self._memory[self.pc] << 8) | (self._memory[self.pc + 1])
+        self.opcode = opcode
 
     def cycle(self):
         """
@@ -277,6 +386,13 @@ class CPU:
         exop = self.opcode & 0xF000
 
         self._opmap[exop]()
-        self.pc += 2
-        if self._logflag:
-            self.debugworks()
+        self.pc += 0 if exop in [0x2000, 0x00EE, 0x1000] else 2
+    #    if self._logflag:
+        #    self.debugworks()
+
+        self.dt -= 1 if self.dt > 0 else 0
+        if self.st > 0:
+            print(self.st)
+            self.st -= 1
+            if self.st == 0:
+                ...
