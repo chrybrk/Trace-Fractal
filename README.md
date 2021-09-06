@@ -1,1 +1,1 @@
-A CHIP-8 emulator/interpreter written in Python3. Currently a work in progress.
+A failed implementation of chip8 emulator
