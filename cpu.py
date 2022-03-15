@@ -8,6 +8,7 @@ import typing as t
 import pygame
 
 from devices import FONTS, Display, KeyPad
+
 pygame.init()
 
 if t.TYPE_CHECKING:
@@ -353,9 +354,7 @@ class CPU:
             self.memory[0x200 + i] = data
 
     def beep(self) -> None:
-        os.system(
-            "play -q -n synth .1 sin 1000"
-        )
+        os.system("play -q -n synth .1 sin 1000")
 
     def cycle(self) -> None:
         for _ in range(self.speed):
@@ -373,7 +372,7 @@ class CPU:
 
             if self.st > 0:
                 self.st -= 1
-                #self.beep()
+                # self.beep()
 
     def run(self) -> None:
         self.load_fonts()
@@ -399,7 +398,7 @@ class CPU:
                 if event.type == pygame.QUIT:
                     is_running = False
 
-            if (time.time() - self.now) > (self.FPS/1000):
+            if (time.time() - self.now) > (self.FPS / 1000):
                 self.cycle()
 
             if self.draw_flag:

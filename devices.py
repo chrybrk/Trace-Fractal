@@ -1,10 +1,10 @@
 import pygame
 
-__all__ = ( "FONTS", "Display", "KeyPad")
+__all__ = ("FONTS", "Display", "KeyPad")
 
 
 _0 = (0, 0, 0)
-_1 = (0,255,255)
+_1 = (0, 255, 255)
 
 # fmt: off
 FONTS = [ 
