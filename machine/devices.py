@@ -35,7 +35,7 @@ class Display:
 
         self.extendby = 10
         self.screen = pygame.display.set_mode(
-            (columns * self.extendby, rows * self.extendby)
+            (columns * self.extendby, rows * self.extendby), pygame.RESIZABLE
         )
         self.screen.fill(_0)
         pygame.display.flip()

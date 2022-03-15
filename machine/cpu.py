@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import random
 import os
+import random
 import time
 import typing as t
 
@@ -10,6 +10,7 @@ import pygame
 from devices import FONTS, Display, KeyPad
 
 pygame.init()
+pygame.display.set_caption("Trace-Fractal")
 
 if t.TYPE_CHECKING:
     from io import FileIO
@@ -406,6 +407,7 @@ class CPU:
 
 
 if __name__ == "__main__":
-    cpu = CPU(speed=1)
-    cpu.load_rom(open("./roms/test_opcode.ch8", "rb"))
+    cpu = CPU(speed=5)
+    # Edit the path with the location of your ROM in case you want to run it on your machine.
+    cpu.load_rom(open("./roms/Pong (1 player).ch8", "rb"))
     cpu.run()
