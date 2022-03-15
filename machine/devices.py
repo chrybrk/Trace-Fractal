@@ -43,6 +43,9 @@ class Display:
         self.display_buffer = bytearray(rows * columns)
 
     def draw(self, xpos: int, ypos: int) -> bool:
+        """
+        Method to XOR a pixel on the screen as per requests made by D000 operator.
+        """
         if 0 > xpos:
             xpos += self.columns
         xpos -= self.columns if xpos > self.columns else 0
@@ -59,9 +62,15 @@ class Display:
             return 0
 
     def clear(self) -> None:
-        self.display_buffer = [0] * self.rows * self.columns
+        """
+        A method to clear the display buffer.
+        """
+        self.display_buffer = bytearray(self.rows * self.columns)
 
     def render(self) -> None:
+        """
+        A method to render and clear pixels on the screen as per the directives of the display buffer.
+        """
         self.screen.fill(_0)
 
         for i in range(self.columns * self.rows):
