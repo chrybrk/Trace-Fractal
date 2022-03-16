@@ -303,7 +303,8 @@ class CPU:
 
     def DRW_Vx_Vy_nibble(self) -> None:
         """
-        0xD000 - Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+        0xD000 - Display n-byte sprite starting at memory location I at (Vx, Vy), 
+        set VF = collision.
         """
         width = 8
         height = self.opcode & 0xF
@@ -564,6 +565,7 @@ class CPU:
 if __name__ == "__main__":
     cpu = CPU()
 
-    # Edit the path with the location of your ROM in case you want to run it on your machine.
+    # Edit the path with the location of your ROM in case you want to run it
+    # on your machine.
     cpu.load_rom(open("./roms/Space Invaders [David Winter].ch8", "rb"))
     cpu.run()
