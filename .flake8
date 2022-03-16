@@ -3,3 +3,4 @@ max-line-length = 88
 per-file-ignores = 
     machine/__init__.py:F401, F403
     machine/cpu.py:E741
+    machine/devices.py:W291

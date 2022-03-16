@@ -303,8 +303,8 @@ class CPU:
 
     def DRW_Vx_Vy_nibble(self) -> None:
         """
-        0xD000 - Display n-byte sprite starting at memory location I at (Vx, Vy), 
-        set VF = collision.
+        0xD000 - Display n-byte sprite starting at
+        memory location I at (Vx, Vy), set VF = collision.
         """
         width = 8
         height = self.opcode & 0xF
