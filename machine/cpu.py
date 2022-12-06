@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import random
 import time
 import typing as t
@@ -563,9 +564,18 @@ class CPU:
 
 
 if __name__ == "__main__":
-    cpu = CPU()
 
-    # Edit the path with the location of your ROM in case you want to run it
-    # on your machine.
-    cpu.load_rom(open("./roms/Space Invaders [David Winter].ch8", "rb"))
-    cpu.run()
+    if (len(sys.argv) > 1):
+        sys.argv.pop(0)
+        if "-h" in sys.argv:
+            print("\nUsage:\n\tpython cpu.py <ROM>\nOptions:\n\t-h: help")
+            sys.argv.pop(sys.argv.index("-h"))
+
+        path = sys.argv[len(sys.argv) - 1] if len(sys.argv) > 0 else exit(1)
+
+        cpu = CPU()
+        cpu.load_rom(open(path, "rb"))
+        cpu.run()
+
+    else:
+        print("\nErr: Unable to load ROM.\n\ttry using python3 cpu.py -h")
